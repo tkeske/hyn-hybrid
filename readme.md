@@ -5,7 +5,7 @@
 - Latest stable and LTS Laravel versions.
 - PHP 7+.
 - Apache or Nginx.
-- MySQL, MariaDB or PostgreSQL.
+- MySQL, MariaDB
 
 Please read the full [requirements in the documentation](https://tenancy.dev/docs/hyn/5.4/requirements).
 
