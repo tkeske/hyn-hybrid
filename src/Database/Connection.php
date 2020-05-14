@@ -523,7 +523,7 @@ class Connection
 
                     $cntOfTenantsInLast = Connection::howManyTenants();
 
-                    if ($cntOfTenantsInLast == self::TENANTS_PER_DATABASE ){
+                    if ($cntOfTenantsInLast == 0 || $cntOfTenantsInLast % self::TENANTS_PER_DATABASE == 0){
                         //vytvoreni nove databaze pro ukladani tenantu
 
 
