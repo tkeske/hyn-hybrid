@@ -55,7 +55,7 @@ class Connection
      */
     const DIVISION_MODE_BYPASS = 'bypass';
 
-    const TENANTS_PER_DATABASE = 10;
+    const TENANTS_PER_DATABASE = 2;
 
     const RANDOM_KEY = "1df1dsffds3ds6dfs+5sfd";
 
@@ -298,6 +298,25 @@ class Connection
     }
 
     /**
+     * Verifies if tenant with given uuid already exists
+     *
+     * @param string $uuid
+     * @return boolean
+     */
+    public static function tenantExists($uuid) {
+
+        config(['database.default' => 'system']);
+
+        $rslt = DB::select("SELECT * FROM websites WHERE uuid = :uuid;", ["uuid" => $uuid]);
+
+        if (count($rslt) > 0) {
+            return TRUE;
+        }
+
+        return FALSE;
+    }
+
+    /**
     * Return actual count of tenant databases storage and their db names
     * @return array
     */
@@ -342,7 +361,7 @@ class Connection
     * @param string $tenantBase
     * @return boolean|string
     */
-    public function getDatabasePassword($tenantBase) {
+    public static function getDatabasePassword($tenantBase) {
 
         config(['database.default' => 'system']);
 
@@ -364,7 +383,7 @@ class Connection
     * @param object $website
     * @return string $pass
     */
-    public function generateDatabasePassword($website) {
+    public static function generateDatabasePassword($website) {
 
         $pass =  $website->the_key . "-" . $website->uuid . "-" . $website->id . "-" . self::RANDOM_KEY;
 
@@ -504,26 +523,29 @@ class Connection
 
                     $cntOfTenantsInLast = Connection::howManyTenants();
 
-                    if ($cntOfTenantsInLast == 0 || $cntOfTenantsInLast % self::TENANTS_PER_DATABASE == 0){
+                    if ($cntOfTenantsInLast == self::TENANTS_PER_DATABASE ){
                         //vytvoreni nove databaze pro ukladani tenantu
 
-                        $getPw = $this->getDatabasePassword($tenantDbStorage);
+
+                        $getPw = Connection::getDatabasePassword($tenantDbStorage);
 
                         $clone['username'] = $clone['database'] = $getPw ? $tenantDbStorage : "tenants" . Connection::whatDbWillBeUsed();
-                        $clone['password'] =  $getPw ? $getPw : $this->generateDatabasePassword($website);
+                        $clone['password'] =  $getPw ? $getPw : Connection::generateDatabasePassword($website);
                         $clone['prefix'] = sprintf('%d_', $website->tenant_prefix);
                     } else {
+
+
                         //jinak ukladame do jiz existujici db a getneme si password
 
                         $clone['username'] = $clone['database'] = $tenantDbStorage;
-                        $clone['password'] = $this->getDatabasePassword($tenantDbStorage);
+                        $clone['password'] = Connection::getDatabasePassword($tenantDbStorage);
                         $clone['prefix'] = sprintf('%d_', $website->tenant_prefix);
                     }
                 } else {
 
                     //pripad kdy zadna databaze s tenanty neexistuje
 
-                    $getPw = $this->getDatabasePassword($tenantDbStorage);
+                    $getPw = Connection::getDatabasePassword($tenantDbStorage);
 
                     $clone['username'] = $clone['database'] = $tenantDbStorage;
                     $clone['password'] = $getPw ? $getPw : $this->generateDatabasePassword($website);
