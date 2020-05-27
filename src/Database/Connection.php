@@ -549,9 +549,6 @@ class Connection
                         $clone['password'] =  $getPw ? $getPw : Connection::generateDatabasePassword($website);
                         $clone['prefix'] = sprintf('%d_', $website->tenant_prefix);
 
-                        $a = \DB::connection()->getDatabaseName();
-                       // var_dump($a);
-                       // var_dump($website->tenant_prefix);
                     } else {
 
 
