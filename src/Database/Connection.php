@@ -325,11 +325,20 @@ class Connection
         config(['database.default' => 'system']);
 
         $currentDatabases = DB::select("SELECT SCHEMA_NAME AS `db` FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME LIKE '%tenants%';");
+        $cdbRet = [];
+
+        foreach($currentDatabases as $cdb) {
+            $cdbRet[] = $cdb->db;
+        }
+
+        //sort fix due to databases are returned in random manner
+        sort($cdbRet,SORT_STRING);
+
         $dbCount = count($currentDatabases);
 
         config(['database.default' => 'tenant']);
 
-        return array("dbs" => $currentDatabases, "count" => $dbCount);
+        return array("dbs" => $cdbRet, "count" => $dbCount);
     }
 
     /**
@@ -341,8 +350,8 @@ class Connection
 
         $dbInfo = Connection::getTenantDatabasesCount();
 
-        if (isset(end($dbInfo["dbs"])->db)) {
-            $lastDb = end($dbInfo["dbs"])->db;
+        if (!empty($dbInfo["dbs"])) {
+            $lastDb = end($dbInfo["dbs"]);
 
             config(['database.default' => 'system']);
 
@@ -397,14 +406,20 @@ class Connection
     public static function isLastDbFull() {
         $tablesInLast = Connection::getTablesInLastDatabase();
 
-        if (is_array($tablesInLast) && !empty($tablesInLast)) {
+        if (!is_array($tablesInLast)) {
+            return FALSE;
+        }
+
+       // if (is_array($tablesInLast) && !empty($tablesInLast)) {
 
             $cntOfTenantsInLast =  Connection::exactTenantCount($tablesInLast);
 
-            if (self::TENANTS_PER_DATABASE / $cntOfTenantsInLast == 1) {
+            //var_dump($cntOfTenantsInLast);
+
+            if (self::TENANTS_PER_DATABASE == $cntOfTenantsInLast ) {
                 return TRUE;
             }
-        }
+        //}
 
         return FALSE;
     }
@@ -475,7 +490,8 @@ class Connection
             return 0;
         }
 
-        $lastDb = end($dbInfo["dbs"])->db;
+        $lastDb = end($dbInfo["dbs"]);
+
         $tablesInLast = Connection::getTablesInLastDatabase($lastDb);
 
         $cntOfTenantsInLast = Connection::howManyTenants($tablesInLast);
@@ -532,6 +548,10 @@ class Connection
                         $clone['username'] = $clone['database'] = $getPw ? $tenantDbStorage : "tenants" . Connection::whatDbWillBeUsed();
                         $clone['password'] =  $getPw ? $getPw : Connection::generateDatabasePassword($website);
                         $clone['prefix'] = sprintf('%d_', $website->tenant_prefix);
+
+                        $a = \DB::connection()->getDatabaseName();
+                       // var_dump($a);
+                       // var_dump($website->tenant_prefix);
                     } else {
 
 
